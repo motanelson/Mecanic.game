@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Whimsical Gear Workshop</title>
+  <style>
+    :root {
+      --bg: #1e1e2f;
+      --card-bg: #27293d;
+      --accent-in: #ff6b6b;
+      --accent-out: #4dabf7;
+      --accent-gold: #ffd43b;
+      --text: #f8f9fa;
+      --text-muted: #a0a0b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      min-height: 100vh;
+      background: radial-gradient(circle at center, #2b2b45 0%, #151522 100%);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      letter-spacing: 1px;
+      color: #fff;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 900px;
+      gap: 14px;
+    }
+
+    /* Mission / Challenge Banner */
+    .mission-box {
+      width: 100%;
+      background: rgba(39, 41, 61, 0.9);
+      border: 1px solid rgba(255, 212, 59, 0.4);
+      border-radius: 12px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      backdrop-filter: blur(8px);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .mission-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mission-badge {
+      background: var(--accent-gold);
+      color: #1a1a24;
+      font-weight: bold;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+
+    .mission-text {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .target-highlight {
+      color: var(--accent-gold);
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    /* Canvas Area */
+    .viewport {
+      position: relative;
+      width: 100%;
+      background: #181926;
+      border-radius: 16px;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0,0,0,0.4);
+      overflow: hidden;
+      border: 2px solid #33364f;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 380px;
+    }
+
+    /* Dashboards */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: 100%;
+      gap: 14px;
+    }
+
+    @media (max-width: 650px) {
+      .dash-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      padding: 14px 18px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      border-top: 4px solid #666;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card.input-card {
+      border-color: var(--accent-in);
+    }
+
+    .card.output-card {
+      border-color: var(--accent-out);
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .indicator-dir {
+      font-size: 0.8rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      background: rgba(0,0,0,0.2);
+      padding: 10px 14px;
+      border-radius: 10px;
+    }
+
+    .stat-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .stat-val {
+      font-size: 1.5rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .input-card .stat-val { color: var(--accent-in); }
+    .output-card .stat-val { color: var(--accent-out); }
+
+    /* Up / Down Controls */
+    .controls-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stepper-btn {
+      background: #383b56;
+      border: 1px solid #4f537a;
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: bold;
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .stepper-btn:hover {
+      background: #4b4f73;
+      transform: translateY(-2px);
+    }
+
+    .stepper-btn:active {
+      transform: translateY(1px);
+      background: var(--accent-out);
+      color: #1a1a24;
+    }
+
+    .quick-slider {
+      flex: 1;
+      accent-color: var(--accent-out);
+      cursor: pointer;
+    }
+
+    /* Success Confetti overlay message */
+    .toast {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-30px);
+      background: var(--accent-gold);
+      color: #1b1b24;
+      font-weight: bold;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 0.95rem;
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(255,212,59,0.5);
+      z-index: 10;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .gadget-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding: 0 4px;
+    }
+
+    .btn-small {
+      background: #33364f;
+      border: none;
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: 0.2s;
+    }
+    .btn-small:hover { background: #45496a; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>⚙️ The Whimsical Gear Workshop</h1>
+    <div class="subtitle">Match the gear ratios & discover the physics of counter-rotation!</div>
+  </header>
+
+  <div class="game-container">
+    <!-- Challenge Quest Bar -->
+    <div class="mission-box">
+      <div class="mission-info">
+        <span class="mission-badge" id="missionBadge">Mission 1</span>
+        <span class="mission-text" id="missionText">Adjust teeth to power the <b>Slow Churner</b> at <span class="target-highlight">4.0 RPM</span>!</span>
+      </div>
+      <button class="btn-small" id="skipMissionBtn">Next Mission ⏩</button>
+    </div>
+
+    <!-- Canvas Simulation Area -->
+    <div class="viewport">
+      <div id="toast" class="toast">✨ Perfect Ratio Achieved! ✨</div>
+      <canvas id="gearCanvas"></canvas>
+    </div>
+
+    <!-- Dashboards & Controls -->
+    <div class="dash-grid">
+      <!-- Input Gear Display (Fixed RPM) -->
+      <div class="card input-card">
+        <div class="card-head">
+          <div class="card-title">
+            <span style="color:var(--accent-in)">●</span> Input Driver Gear
+          </div>
+          <span class="indicator-dir">↻ Clockwise</span>
+        </div>
+        <div class="stats-row">
+          <div class="stat-col">
+            <span class="stat-label">Fixed Speed</span>
+            <span class="stat-val">10.0 <small style="font-size:0.9rem">RPM</small></span>
+          </div>
+          <div class="stat-col">
+            <span class="stat-label">Teeth Count</span>
+            <span class="stat-val" id="inTeethDisplay">20 <small style="font-size:0.9rem">T</small></span>
+          </div>
+        </div>
+        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">
+          Constant source power driving the system.
+        </div>
+      </div>
+
+      <!-- Output Gear Display & Stepper Controls -->
+      <div class="card output-card">
+        <div class="card-head">
+          <div class="card-title">
+            <span style="color:var(--accent-out)">●</span> Output Follower Gear
+          </div>
+          <span class="indicator-dir">↺ Counter-Clockwise</span>
+        </div>
+        <div class="stats-row">
+          <div class="stat-col">
+            <span class="stat-label">Output Speed</span>
+            <span class="stat-val" id="outRpmDisplay">10.0 <small style="font-size:0.9rem">RPM</small></span>
+          </div>
+          <div class="stat-col">
+            <span class="stat-label">Teeth Chosen</span>
+            <span class="stat-val" id="outTeethDisplay">20 <small style="font-size:0.9rem">T</small></span>
+          </div>
+        </div>
+
+        <!-- Up / Down buttons + range slider -->
+        <div class="controls-wrapper">
+          <div class="btn-group">
+            <button class="stepper-btn" id="btnDown" title="Decrease teeth">▼</button>
+            <button class="stepper-btn" id="btnUp" title="Increase teeth">▲</button>
+          </div>
+          <input type="range" class="quick-slider" id="teethSlider" min="5" max="60" value="20" step="1" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Extra Gadget Switcher / Audio controls -->
+    <div class="gadget-bar">
+      <span>Connected Gadget: <b id="gadgetName" style="color:#fff">Windmill Propeller</b></span>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-small" id="toggleAudioBtn">🔊 Sound: ON</button>
+        <button class="btn-small" id="cycleGadgetBtn">Change Gadget 🌀</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Gear Math & Game State ---
+    const INPUT_SPEED_RPM = 10.0; // Fixed input speed in RPM
+    const INPUT_TEETH = 20;       // Fixed input gear teeth
+    let outputTeeth = 20;         // Chosen output gear teeth
+    let soundEnabled = true;
+
+    // Missions list
+    const missions = [
+      { name: "Slow Churner", targetRpm: 4.0, gadget: "Butter Churner" },
+      { name: "Cuckoo Clockwork", targetRpm: 20.0, gadget: "Cuckoo Bird" },
+      { name: "Bubble Whirler", targetRpm: 8.0, gadget: "Bubble Blower" },
+      { name: "Turbo Fan", targetRpm: 40.0, gadget: "Super Fan" },
+      { name: "Hypno Spiral", targetRpm: 12.5, gadget: "Hypno Disc" }
+    ];
+    let currentMissionIdx = 0;
+    let completedCurrent = false;
+
+    // Gadgets to draw on output shaft
+    const gadgets = ["Windmill Propeller", "Hypno Spiral", "Disco Spinner"];
+    let gadgetIndex = 0;
+
+    // Angles for gears
+    let angleIn = 0;
+    let angleOut = 0;
+    let lastTime = performance.now();
+
+    // DOM Elements
+    const canvas = document.getElementById("gearCanvas");
+    const ctx = canvas.getContext("2d");
+    const inTeethDisplay = document.getElementById("inTeethDisplay");
+    const outRpmDisplay = document.getElementById("outRpmDisplay");
+    const outTeethDisplay = document.getElementById("outTeethDisplay");
+    const teethSlider = document.getElementById("teethSlider");
+    const btnUp = document.getElementById("btnUp");
+    const btnDown = document.getElementById("btnDown");
+    const toast = document.getElementById("toast");
+    const missionBadge = document.getElementById("missionBadge");
+    const missionText = document.getElementById("missionText");
+    const skipMissionBtn = document.getElementById("skipMissionBtn");
+    const toggleAudioBtn = document.getElementById("toggleAudioBtn");
+    const cycleGadgetBtn = document.getElementById("cycleGadgetBtn");
+    const gadgetName = document.getElementById("gadgetName");
+
+    // Audio Context (Synthesizer for gear ticks & success chimes)
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTick() {
+      if (!soundEnabled || !audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(140 + Math.random() * 40, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function playWinFanfare() {
+      if (!soundEnabled || !audioCtx) return;
+      [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime + i * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.08 + 0.3);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + i * 0.08);
+        osc.stop(audioCtx.currentTime + i * 0.08 + 0.35);
+      });
+    }
+
+    // --- Core Speed Calculation ---
+    // N1 * RPM1 = N2 * RPM2  =>  RPM2 = RPM1 * (N1 / N2)
+    function calculateOutputSpeed() {
+      return (INPUT_SPEED_RPM * INPUT_TEETH) / outputTeeth;
+    }
+
+    function updateDisplays() {
+      const outRpm = calculateOutputSpeed();
+      outTeethDisplay.innerHTML = `${outputTeeth} <small style="font-size:0.9rem">T</small>`;
+      outRpmDisplay.innerHTML = `${outRpm.toFixed(1)} <small style="font-size:0.9rem">RPM</small>`;
+      teethSlider.value = outputTeeth;
+
+      // Check Mission Target
+      const curMission = missions[currentMissionIdx];
+      if (Math.abs(outRpm - curMission.targetRpm) < 0.01) {
+        if (!completedCurrent) {
+          triggerSuccess();
+          completedCurrent = true;
+        }
+      } else {
+        completedCurrent = false;
+      }
+    }
+
+    function setTeeth(newVal) {
+      initAudio();
+      const clamped = Math.max(5, Math.min(60, newVal));
+      if (clamped !== outputTeeth) {
+        outputTeeth = clamped;
+        playTick();
+        updateDisplays();
+      }
+    }
+
+    function triggerSuccess() {
+      playWinFanfare();
+      toast.classList.add("show");
+      createConfetti();
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2500);
+    }
+
+    function loadMission(idx) {
+      currentMissionIdx = idx % missions.length;
+      const m = missions[currentMissionIdx];
+      missionBadge.textContent = `Mission ${currentMissionIdx + 1}`;
+      missionText.innerHTML = `Adjust teeth to power the <b>${m.name}</b> at <span class="target-highlight">${m.targetRpm.toFixed(1)} RPM</span>!`;
+      completedCurrent = false;
+    }
+
+    // --- Particle Confetti Effect ---
+    let particles = [];
+    function createConfetti() {
+      for (let i = 0; i < 40; i++) {
+        particles.push({
+          x: canvas.width * 0.7,
+          y: canvas.height * 0.5,
+          vx: (Math.random() - 0.5) * 8,
+          vy: (Math.random() - 1) * 7 - 2,
+          size: Math.random() * 6 + 3,
+          color: `hsl(${Math.random() * 360}, 90%, 65%)`,
+          life: 1.0
+        });
+      }
+    }
+
+    // --- Responsive Canvas Setup ---
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+    }
+    window.addEventListener("resize", resizeCanvas);
+
+    // --- Drawing Helper: Procedural Involute Gear ---
+    function drawDetailedGear(x, y, radius, teeth, angle, colorMain, colorAccent, isInput) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+
+      const toothDepth = 14;
+      const innerRadius = radius - toothDepth * 0.6;
+      const outerRadius = radius + toothDepth * 0.6;
+      const step = (Math.PI * 2) / teeth;
+
+      // Draw gear teeth outline
+      ctx.beginPath();
+      for (let i = 0; i < teeth; i++) {
+        const a0 = i * step;
+        const a1 = a0 + step * 0.25;
+        const a2 = a0 + step * 0.55;
+        const a3 = a0 + step * 0.8;
+        const a4 = (i + 1) * step;
+
+        ctx.lineTo(Math.cos(a0) * innerRadius, Math.sin(a0) * innerRadius);
+        ctx.lineTo(Math.cos(a1) * outerRadius, Math.sin(a1) * outerRadius);
+        ctx.lineTo(Math.cos(a2) * outerRadius, Math.sin(a2) * outerRadius);
+        ctx.lineTo(Math.cos(a3) * innerRadius, Math.sin(a3) * innerRadius);
+        ctx.lineTo(Math.cos(a4) * innerRadius, Math.sin(a4) * innerRadius);
+      }
+      ctx.closePath();
+
+      // Gear Body Gradient
+      const grad = ctx.createRadialGradient(0, 0, radius * 0.2, 0, 0, outerRadius);
+      grad.addColorStop(0, colorAccent);
+      grad.addColorStop(0.7, colorMain);
+      grad.addColorStop(1, "#181a26");
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(255,255,255,0.3)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Lightweight cutout holes for playful aesthetic
+      const holes = Math.min(teeth > 12 ? 5 : 3, 6);
+      const holeDist = radius * 0.55;
+      const holeRad = Math.max(3, radius * 0.16);
+      if (radius > 35) {
+        for (let h = 0; h < holes; h++) {
+          const ha = (h * Math.PI * 2) / holes;
+          ctx.beginPath();
+          ctx.arc(Math.cos(ha) * holeDist, Math.sin(ha) * holeDist, holeRad, 0, Math.PI * 2);
+          ctx.fillStyle = "#181926";
+          ctx.fill();
+          ctx.strokeStyle = "rgba(255,255,255,0.15)";
+          ctx.stroke();
+        }
+      }
+
+      // Center Hub & Axle
+      ctx.beginPath();
+      ctx.arc(0, 0, Math.max(10, radius * 0.22), 0, Math.PI * 2);
+      ctx.fillStyle = "#2e324a";
+      ctx.fill();
+      ctx.strokeStyle = colorAccent;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Shaft bolt
+      ctx.beginPath();
+      ctx.arc(0, 0, 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // --- Draw Direction Indicator Arrows around gears ---
+    function drawDirectionArrow(x, y, radius, isClockwise, color) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 2.5;
+
+      const r = radius + 22;
+      const startAngle = isClockwise ? -Math.PI * 0.75 : -Math.PI * 0.25;
+      const endAngle = isClockwise ? -Math.PI * 0.2 : -Math.PI * 0.8;
+
+      ctx.beginPath();
+      ctx.arc(0, 0, r, startAngle, endAngle, !isClockwise);
+      ctx.stroke();
+
+      // Arrow head
+      const arrowTipAngle = endAngle;
+      const tx = Math.cos(arrowTipAngle) * r;
+      const ty = Math.sin(arrowTipAngle) * r;
+      const headLen = 8;
+      const tangent = arrowTipAngle + (isClockwise ? Math.PI / 2 : -Math.PI / 2);
+
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(
+        tx - headLen * Math.cos(tangent - Math.PI / 6),
+        ty - headLen * Math.sin(tangent - Math.PI / 6)
+      );
+      ctx.lineTo(
+        tx - headLen * Math.cos(tangent + Math.PI / 6),
+        ty - headLen * Math.sin(tangent + Math.PI / 6)
+      );
+      ctx.closePath();
+      ctx.fill();
+
+      // Label
+      ctx.font = "bold 11px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(isClockwise ? "↻ CW" : "↺ CCW", 0, -r - 6);
+
+      ctx.restore();
+    }
+
+    // --- Draw Connected Fun Gadget on Output Gear ---
+    function drawConnectedGadget(x, y, angle) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+
+      const gadget = gadgets[gadgetIndex];
+      if (gadget === "Windmill Propeller") {
+        for (let b = 0; b < 3; b++) {
+          ctx.rotate((Math.PI * 2) / 3);
+          ctx.beginPath();
+          ctx.ellipse(0, 32, 7, 24, 0, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(77, 171, 247, 0.75)";
+          ctx.fill();
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      } else if (gadget === "Hypno Spiral") {
+        ctx.beginPath();
+        for (let t = 0; t < 28; t += 0.2) {
+          const r = t * 1.5;
+          const px = Math.cos(t) * r;
+          const py = Math.sin(t) * r;
+          if (t === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.strokeStyle = "#ffd43b";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      } else if (gadget === "Disco Spinner") {
+        for (let d = 0; d < 8; d++) {
+          ctx.rotate((Math.PI * 2) / 8);
+          ctx.beginPath();
+          ctx.arc(0, 28, 4, 0, Math.PI * 2);
+          ctx.fillStyle = d % 2 === 0 ? "#ff6b6b" : "#4dabf7";
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    // --- Animation & Physics Loop ---
+    function render(timestamp) {
+      const dt = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+
+      // Rotational speeds in radians/sec
+      // 10 RPM = 10 * 2*pi / 60 rad/s
+      // We apply a gentle multiplier (2.5x) purely so visually 10 RPM is lively on screen
+      const visualSpeedScale = 2.5;
+      const speedInRad = (INPUT_SPEED_RPM * 2 * Math.PI / 60) * visualSpeedScale;
+      const speedOutRad = calculateOutputSpeed() * (2 * Math.PI / 60) * visualSpeedScale;
+
+      // Update angles: Output gear rotates in OPPOSITE direction
+      angleIn += speedInRad * dt;
+      angleOut -= speedOutRad * dt; // Negative sign = opposite counter-rotation!
+
+      // Clear Canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.width / dpr;
+      const h = canvas.height / dpr;
+
+      ctx.save();
+      ctx.scale(dpr, dpr);
+
+      // Pitch radius is strictly proportional to teeth count to ensure teeth mesh cleanly!
+      // Base module (size per tooth):
+      const module = Math.min(w / 75, 4.2);
+      const r1 = INPUT_TEETH * module;
+      const r2 = outputTeeth * module;
+
+      // Position gears centered horizontally
+      const totalWidth = r1 + r2;
+      const startX = (w - totalWidth) / 2;
+      const g1x = startX + r1;
+      const g1y = h / 2;
+      const g2x = g1x + r1 + r2;
+      const g2y = h / 2;
+
+      // Background mesh grid dots
+      ctx.fillStyle = "rgba(255,255,255,0.03)";
+      for (let gx = 20; gx < w; gx += 28) {
+        for (let gy = 20; gy < h; gy += 28) {
+          ctx.fillRect(gx, gy, 2, 2);
+        }
+      }
+
+      // Draw Gears
+      // Meshing phase offset: half a tooth pitch makes the teeth interlock correctly
+      const meshPhaseOffset = Math.PI / outputTeeth;
+      drawDetailedGear(g1x, g1y, r1, INPUT_TEETH, angleIn, "#d94848", "#ff8787", true);
+      drawDetailedGear(g2x, g2y, r2, outputTeeth, angleOut + meshPhaseOffset, "#228be6", "#74c0fc", false);
+
+      // Draw rotation direction guides
+      drawDirectionArrow(g1x, g1y, r1, true, "rgba(255, 107, 107, 0.7)");
+      drawDirectionArrow(g2x, g2y, r2, false, "rgba(77, 171, 247, 0.7)");
+
+      // Draw output gadget on output shaft
+      drawConnectedGadget(g2x, g2y, angleOut);
+
+      // Render Confetti Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2; // gravity
+        p.life -= 0.02;
+
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      ctx.globalAlpha = 1.0;
+
+      ctx.restore();
+      requestAnimationFrame(render);
+    }
+
+    // --- User Event Listeners ---
+    btnUp.addEventListener("click", () => setTeeth(outputTeeth + 1));
+    btnDown.addEventListener("click", () => setTeeth(outputTeeth - 1));
+
+    // Keyboard support (Arrow keys)
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp") setTeeth(outputTeeth + 1);
+      if (e.key === "ArrowDown") setTeeth(outputTeeth - 1);
+    });
+
+    teethSlider.addEventListener("input", (e) => {
+      setTeeth(parseInt(e.target.value, 10));
+    });
+
+    skipMissionBtn.addEventListener("click", () => {
+      loadMission(currentMissionIdx + 1);
+    });
+
+    cycleGadgetBtn.addEventListener("click", () => {
+      gadgetIndex = (gadgetIndex + 1) % gadgets.length;
+      gadgetName.textContent = gadgets[gadgetIndex];
+    });
+
+    toggleAudioBtn.addEventListener("click", () => {
+      initAudio();
+      soundEnabled = !soundEnabled;
+      toggleAudioBtn.textContent = soundEnabled ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+    });
+
+    // Touch/click canvas to play sound and wake WebAudio
+    canvas.addEventListener("pointerdown", () => {
+      initAudio();
+    });
+
+    // --- Init ---
+    resizeCanvas();
+    updateDisplays();
+    loadMission(0);
+    requestAnimationFrame((t) => {
+      lastTime = t;
+      render(t);
+    });
+  </script>
+</body>
+</html>
